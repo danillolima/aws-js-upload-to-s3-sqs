@@ -61,13 +61,13 @@ function createFolder(folderName) {
   });
 }
 
-function deleteFile(albumName, photoKey) {
-  s3.deleteObject({ Key: photoKey }, function(err, data) {
+function deleteFile(folderName, folderKey) {
+  s3.deleteObject({ Key: folderKey }, function(err, data) {
     if (err) {
       return alert("Ocorreu um erro deletando um arquivo: ", err.message);
     }
     alert("Arquivo deletado.");
-    viewFolder(albumName);
+    viewFolder(folderName);
   });
 }
 
@@ -91,8 +91,8 @@ function htmlPrev(uri){
 }
 
 function viewFolder(folderName) {
-  var folderPhotosKey = encodeURIComponent(folderName) + "//";
-  s3.listObjects({ Prefix: folderPhotosKey }, function(err, data) {
+  var folderFoldersKey = encodeURIComponent(folderName) + "//";
+  s3.listObjects({ Prefix: folderFoldersKey }, function(err, data) {
     if (err) {
       return alert("Ocorreu um erro abrindo a pasta " + err.message);
     }
@@ -100,65 +100,65 @@ function viewFolder(folderName) {
     var href = this.request.httpRequest.endpoint.href;
     var bucketUrl = href + bucketName + "/";
 
-    var photos = data.Contents.map(function(photo) {
-      var photoKey = photo.Key;
-      var photoUrl = bucketUrl + encodeURIComponent(photoKey);
+    var folders = data.Contents.map(function(folder) {
+      var folderKey = folder.Key;
+      var folderUrl = bucketUrl + encodeURIComponent(folderKey);
       return getHtml([
         "<div class=\"card\">",
-        htmlPrev(photoUrl),
+        htmlPrev(folderUrl),
         "<div>",
         "<button onclick=\"deleteFile('" +
           folderName +
           "','" +
-          photoKey +
+          folderKey +
           "')\">",
           "Excluir",
           "<span class=\"oi oi-delete\" title=\"icon name\" aria-hidden=\"true\"></span>",
         "</button>",
         "<span style=\"overflow-wrap: break-word;\">",
-        photoKey.replace(folderPhotosKey, ""),
+        folderKey.replace(folderFoldersKey, ""),
         "</span>",
         "</div>",
         "</div>",
       ]);
     });
-    var message = photos.length
-      ? "<p>Quantidade de arquivos: "+photos.length+"</p>"
+    var message = folders.length
+      ? "<p>Quantidade de arquivos: "+folders.length+"</p>"
       : "<p>Você não tem arquivos nessa pasta.</p>";
     var htmlTemplate = [
       "<h2>",
       "Pasta: " + folderName,
       "</h2>",
       message,
-      '<input id="photoupload" type="file" accept="*">',
-      '<button id="addphoto" onclick="addPhoto(\'' + folderName + "')\">",
+      '<input id="folderupload" type="file" accept="*">',
+      '<button id="addfolder" onclick="addFolder(\'' + folderName + "')\">",
       "Enviar arquivo",
       "</button>",
       '<button onclick="listFolders()">',
       "<span class=\"oi oi-chevron-left\" title=\"icon name\"> Voltar para pastas",
       "</button>",
       "<div class=\"pt-5 card-columns\">",
-      getHtml(photos),
+      getHtml(folders),
       "</div>"
     ];
     document.getElementById("app").innerHTML = getHtml(htmlTemplate);
   });
 }
 
-function addPhoto(folderName) {
-  var files = document.getElementById("photoupload").files;
+function addFolder(folderName) {
+  var files = document.getElementById("folderupload").files;
   if (!files.length) {
     return alert("Escolha uma arquivo antes!");
   }
   var file = files[0];
   var fileName = file.name;
-  var folderPhotosKey = encodeURIComponent(folderName) + "//";
-  var photoKey = folderPhotosKey + fileName;
+  var folderFoldersKey = encodeURIComponent(folderName) + "//";
+  var folderKey = folderFoldersKey + fileName;
   // Use S3 ManagedUpload class as it supports multipart uploads
   var upload = new AWS.S3.ManagedUpload({
     params: {
       Bucket: bucketName,
-      Key: photoKey,
+      Key: folderKey,
       Body: file,
       ACL: "public-read"
     }
@@ -242,7 +242,7 @@ function listFolders() {
         getHtml(folders),
         "</table>",
         "<footer>",
-        "Exemplo adaptado apartir de: https://docs.aws.amazon.com/pt_br/sdk-for-javascript/v2/developer-guide/s3-example-photo-album.html",
+        "Exemplo adaptado apartir de: https://docs.aws.amazon.com/pt_br/sdk-for-javascript/v2/developer-guide/s3-example-folder-album.html",
         "</footer>"
         
       ];
